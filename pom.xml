@@ -15,8 +15,6 @@
     <description>JWT based spring security REST API</description>
 
     <properties>
-        <java.version>1.8</java.version>
-        <mysql.connetor.version>8.0.15</mysql.connetor.version>
         <jsonwebtoken.version>0.8.0</jsonwebtoken.version>
     </properties>
 
@@ -51,7 +49,6 @@
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
             <scope>runtime</scope>
-            <version>8.0.20</version>
         </dependency>
 
 
