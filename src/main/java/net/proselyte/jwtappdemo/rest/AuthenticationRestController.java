@@ -53,7 +53,13 @@ public class AuthenticationRestController {
                 response.put("message", "Registration error");
                 return ResponseEntity.badRequest().body(response);
             }
-            response.put("message", "User registered successfully");
+            authenticationManager.
+                    authenticate(new UsernamePasswordAuthenticationToken(
+                            userRegisterDto.getUsername(), userRegisterDto.getPassword()));
+            String token = jwtTokenProvider.createToken(userRegisterDto.getUsername(), user.getRoles());
+
+            response.put("username", userRegisterDto.getUsername());
+            response.put("token", token);
             return ResponseEntity.ok(response);
 
         }catch (AuthenticationException e){
