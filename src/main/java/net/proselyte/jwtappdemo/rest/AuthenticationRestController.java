@@ -14,6 +14,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -36,21 +37,22 @@ public class AuthenticationRestController {
         this.userService = userService;
         this.categoryService = categoryService;
     }
+
     @PostMapping("register")
-    public ResponseEntity register(@RequestBody UserRegisterDto userRegisterDto){
+    public ResponseEntity register(@RequestBody UserRegisterDto userRegisterDto) {
         try {
-            Map<Object,Object> response = new HashMap<>();
-            if(userService.findByUsername(userRegisterDto.getUsername())!=null){
-                response.put("message","Error: username is exist");
+            Map<Object, Object> response = new HashMap<>();
+            if (userService.findByUsername(userRegisterDto.getUsername()) != null) {
+                response.put("message", "Такой логин уже зарегистрирован");
                 return ResponseEntity.badRequest().body(response);
             }
-            if(userService.findByEmail(userRegisterDto.getEmail())!=null){
-                response.put("message","Error: Email is exist");
+            if (userService.findByEmail(userRegisterDto.getEmail()) != null) {
+                response.put("message", "Такой e-mail уже зарегисрирован");
                 return ResponseEntity.badRequest().body(response);
             }
             User user = userService.register(userRegisterDto.toUser());
-            if(user == null){
-                response.put("message", "Registration error");
+            if (user == null) {
+                response.put("message", "Ошибка регистрации");
                 return ResponseEntity.badRequest().body(response);
             }
             authenticationManager.
@@ -62,8 +64,8 @@ public class AuthenticationRestController {
             response.put("token", token);
             return ResponseEntity.ok(response);
 
-        }catch (AuthenticationException e){
-            throw new BadCredentialsException("Invalid registered");
+        } catch (AuthenticationException e) {
+            throw new BadCredentialsException("Ошибка регистрации");
         }
     }
 
@@ -79,7 +81,6 @@ public class AuthenticationRestController {
             }
 
             String token = jwtTokenProvider.createToken(username, user.getRoles());
-
             Map<Object, Object> response = new HashMap<>();
             response.put("username", username);
             response.put("token", token);

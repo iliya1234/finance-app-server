@@ -12,11 +12,13 @@ public interface CategoryService {
 
     List<Category> findByUserId(Long id);
 
-    Category create(Category category, Long id);
+    List<Category> findByUserName(String username);
 
-    Category update(Category category, Long id, User user);
+    Category create(Category category, String username);
+
+    Category update(Category category, Long idCategory, User user);
 
     void delete(Long id);
 
-    Category findByName(String name,Long idUser);
+    Category findByNameAndUsername(String name, String username);
 }

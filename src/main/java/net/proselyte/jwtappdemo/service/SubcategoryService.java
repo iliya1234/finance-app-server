@@ -1,7 +1,9 @@
 package net.proselyte.jwtappdemo.service;
 
+
 import net.proselyte.jwtappdemo.model.Subcategory;
 import net.proselyte.jwtappdemo.model.User;
+
 import java.util.List;
 
 public interface SubcategoryService {
@@ -11,11 +13,13 @@ public interface SubcategoryService {
 
     List<Subcategory> findByUserId(Long id);
 
-    Subcategory create(Subcategory subcategory, Long idUser);
+    Subcategory create(Subcategory subcategory, String username);
 
-    Subcategory update(Subcategory subcategory, Long id, User user);
+    Subcategory update(Subcategory subcategory, Long idSubcategory, User user);
 
     void delete(Long id);
 
-    Subcategory findByName(String name,Long idUser);
+    List<Subcategory> findByUserUsername(String username);
+
+    Subcategory findByNameAndUsername(String name, String username);
 }

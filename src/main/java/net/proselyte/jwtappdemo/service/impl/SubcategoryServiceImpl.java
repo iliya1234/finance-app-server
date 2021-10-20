@@ -8,13 +8,15 @@ import net.proselyte.jwtappdemo.repository.UserRepository;
 import net.proselyte.jwtappdemo.service.SubcategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @Slf4j
 public class SubcategoryServiceImpl implements SubcategoryService {
-    private SubcategoryRepository subcategoryRepository;
-    private UserRepository userRepository;
+    private final SubcategoryRepository subcategoryRepository;
+    private final UserRepository userRepository;
 
     @Autowired
     public SubcategoryServiceImpl(SubcategoryRepository subcategoryRepository, UserRepository userRepository) {
@@ -32,11 +34,11 @@ public class SubcategoryServiceImpl implements SubcategoryService {
     @Override
     public Subcategory findById(Long id) {
         Subcategory result = subcategoryRepository.findById(id).orElse(null);
-        if (result == null){
+        if (result == null) {
             log.warn("IN findById - no subcategory found by id: {}", id);
             return null;
         }
-        log.info("IN findById - operation: {} found by id: {}", result);
+        log.info("IN findById - operation: {} found by id: {}", result, id);
         return result;
 
     }
@@ -44,15 +46,15 @@ public class SubcategoryServiceImpl implements SubcategoryService {
     @Override
     public List<Subcategory> findByUserId(Long id) {
         List<Subcategory> result = subcategoryRepository.findByUserId(id);
-        log.info("IN getByUserId - {} subcategory found with id: {}", result.size(),id);
+        log.info("IN getByUserId - {} subcategory found with id: {}", result.size(), id);
         return result;
     }
 
     @Override
-    public Subcategory create(Subcategory subcategory,Long idUser) {
-        User user = userRepository.findById(idUser).orElse(null);
-        if(user == null){
-            log.warn("IN findById - no user found by id: {}", idUser);
+    public Subcategory create(Subcategory subcategory, String username) {
+        User user = userRepository.findByUsername(username);
+        if (user == null) {
+            log.warn("IN findById - no user found by username: {}", username);
             return null;
         }
         subcategory.setUser(user);
@@ -62,8 +64,17 @@ public class SubcategoryServiceImpl implements SubcategoryService {
     }
 
     @Override
-    public Subcategory update(Subcategory subcategory, Long id,User user) {
-        subcategory.setId(id);
+    public Subcategory update(Subcategory subcategory, Long idSubcategory, User user) {
+        List<Subcategory> subcategoryList = subcategoryRepository.findByUserUsername(user.getUsername());
+        long errorCount = subcategoryList
+                .stream()
+                .filter(x -> x.getName().equals(subcategory.getName()))
+                .filter(x -> !Objects.equals(x.getId(), idSubcategory))
+                .count();
+        if (errorCount > 0) {
+            return null;
+        }
+        subcategory.setId(idSubcategory);
         subcategory.setUser(user);
         subcategoryRepository.save(subcategory);
         log.info("IN update - subcategory: {} successfully updated", subcategory);
@@ -76,23 +87,21 @@ public class SubcategoryServiceImpl implements SubcategoryService {
     }
 
     @Override
-    public Subcategory findByName(String name,Long idUser) {
-        List<Subcategory> subcategoryList = subcategoryRepository.findByName(name);
-        if (subcategoryList == null){
-            log.warn("IN findByName - no subcategory found by name: {}", name);
+    public List<Subcategory> findByUserUsername(String username) {
+        List<Subcategory> result = subcategoryRepository.findByUserUsername(username);
+        log.info("IN findByUserUsername - {} subcategory found", result.size());
+        if (result.isEmpty()) {
             return null;
         }
-        Subcategory result = null;
-        for (Subcategory subcategory : subcategoryList){
-            if(subcategory.getUser().getId()==idUser){
-                result=subcategory;
-            }
+        return result;
+    }
+
+    @Override
+    public Subcategory findByNameAndUsername(String name, String username) {
+        Subcategory result = subcategoryRepository.findByNameAndUserUsername(name, username);
+        if (result == null) {
+            log.warn("IN findByNameAndUsername - no subcategory found by name: {}", name);
         }
-        if (result == null){
-            log.warn("IN findByName - no category found by name: {}", name);
-            return null;
-        }
-        log.info("IN findByName category: {} found by name: {}", result);
         return result;
     }
 }

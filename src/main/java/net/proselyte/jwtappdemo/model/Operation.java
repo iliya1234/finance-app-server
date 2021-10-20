@@ -1,13 +1,14 @@
 package net.proselyte.jwtappdemo.model;
 
 import lombok.Data;
+
 import javax.persistence.*;
 import java.util.Date;
 
 @Data
 @Entity
 @Table(name = "operations")
-public class Operation extends BaseEntityFinance{
+public class Operation extends BaseEntityFinance {
 
     @Column(name = "created")
     private Date created;

@@ -1,121 +1,157 @@
 package net.proselyte.jwtappdemo.rest;
 
+import com.google.common.base.Strings;
 import net.proselyte.jwtappdemo.dto.CategoryDto;
 import net.proselyte.jwtappdemo.dto.CreateUpdateSubcategoryDto;
 import net.proselyte.jwtappdemo.dto.SubcategoryDto;
 import net.proselyte.jwtappdemo.model.Category;
 import net.proselyte.jwtappdemo.model.Subcategory;
+import net.proselyte.jwtappdemo.security.jwt.JwtTokenProvider;
 import net.proselyte.jwtappdemo.service.CategoryService;
 import net.proselyte.jwtappdemo.service.SubcategoryService;
-import net.proselyte.jwtappdemo.service.UserService;
-import org.json.JSONException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.io.UnsupportedEncodingException;
+
+import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping(value = "/api/subcategories/")
+@RequestMapping(value = "/api/subcategories")
 public class SubcategoryRestController {
     private final SubcategoryService subcategoryService;
-    private final UserService userService;
+    private final JwtTokenProvider jwtTokenProvider;
     private final CategoryService categoryService;
 
-    public SubcategoryRestController(SubcategoryService subcategoryService, UserService userService, CategoryService categoryService) {
+    public SubcategoryRestController(SubcategoryService subcategoryService, JwtTokenProvider jwtTokenProvider, CategoryService categoryService) {
         this.subcategoryService = subcategoryService;
-        this.userService = userService;
+        this.jwtTokenProvider = jwtTokenProvider;
         this.categoryService = categoryService;
     }
-    @GetMapping(value = "all/user/{id}")
-    public ResponseEntity<List<SubcategoryDto>> getAllSubcategoriesById(@RequestHeader Map<String,String> headers, @PathVariable(name = "id") Long id) throws UnsupportedEncodingException, JSONException {
-        if(!userService.checkingAccessRights(id, headers))
-            return new ResponseEntity("Error: you have no rights", HttpStatus.FORBIDDEN);
-        List<Subcategory> subcategoryList = subcategoryService.findByUserId(id);
+
+    private String dataChecking(CreateUpdateSubcategoryDto result){
+        String message;
+        if (Strings.isNullOrEmpty(result.getName())) {
+            message = "Имя подкатегории не может быть пустым";
+            return message;
+        }
+        if (result.getType() == null) {
+            message = "Тип подкатегории не может быть пустым";
+            return message;
+        }
+        if (result.getIdCategory() == null) {
+            message = "Id категории не может быть пустым";
+            return message;
+        }
+        Category category = categoryService.findById(result.getIdCategory());
+        if (category == null) {
+            message = "Нет категории для подкатегории";
+            return message;
+        }
+        return null;
+    }
+    @GetMapping
+    public ResponseEntity<List<SubcategoryDto>> getAllSubcategories(HttpServletRequest request) {
+        String username = jwtTokenProvider.getUsername(jwtTokenProvider.resolveToken(request));
+        List<Subcategory> subcategoryList = subcategoryService.findByUserUsername(username);
         if (subcategoryList == null) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
         List<SubcategoryDto> result = SubcategoryDto.fromListSubcategory(subcategoryList);
-        if(result==null)
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         return new ResponseEntity<>(result, HttpStatus.OK);
     }
-    @PostMapping(value = "create/user/{id_user}")
-    public ResponseEntity createSubcategory(@RequestBody CreateUpdateSubcategoryDto createUpdateSubcategoryDto,
-                                            @PathVariable(name = "id_user") Long id_user,
-                                            @RequestHeader Map<String,String> headers)
-            throws UnsupportedEncodingException, JSONException {
-        if(!userService.checkingAccessRights(id_user, headers))
-            return new ResponseEntity("Error: you have no rights",HttpStatus.FORBIDDEN);
-        Map<Object,Object> response = new HashMap<>();
-        if(subcategoryService.findByName(createUpdateSubcategoryDto.getName(),id_user)!=null){
-            response.put("message","Error: subcategory already created");
+
+    @PostMapping
+    public ResponseEntity<Map<String, String>> createSubcategory
+            (HttpServletRequest request, @RequestBody CreateUpdateSubcategoryDto createUpdateSubcategoryDto) {
+        Map<String, String> response = new HashMap<>();
+        String username = jwtTokenProvider.getUsername(jwtTokenProvider.resolveToken(request));
+        String message = dataChecking(createUpdateSubcategoryDto);
+        if (message != null) {
+            response.put("message", message);
             return ResponseEntity.badRequest().body(response);
         }
-        Category category = categoryService.findById(createUpdateSubcategoryDto.getId_category());
-        if(category == null){
-            response.put("message","Error: there is no category for subcategory");
+        if (subcategoryService.findByNameAndUsername(createUpdateSubcategoryDto.getName(), username) != null) {
+            response.put("message", "Подкатегория уже создана");
             return ResponseEntity.badRequest().body(response);
         }
-        Subcategory subcategory = subcategoryService.create(createUpdateSubcategoryDto.toSubcategory(category),
-                id_user);
-        if(subcategory == null){
-            response.put("message","Error: failed to create subcategory");
+        Category category = categoryService.findById(createUpdateSubcategoryDto.getIdCategory());
+        Subcategory result = subcategoryService.create(createUpdateSubcategoryDto.toSubcategory(category),
+                username);
+        if (result == null) {
+            response.put("message", "Ошибка при создании подкатегории");
             return ResponseEntity.badRequest().body(response);
         }
-        response.put("message", "Subcategory created successfully");
+        response.put("message", "Подкатегория успешно создана!");
         return ResponseEntity.ok(response);
     }
-    @GetMapping(value = "get/id_category/{id_subcategory}")
-    public ResponseEntity<CategoryDto> getCategoryByIdUserAndIdCategory(@RequestHeader Map<String,String> headers,
-                                                                        @PathVariable(name = "id_subcategory")
-                                                                                Long id_subcategory)
-            throws UnsupportedEncodingException, JSONException {
+
+    @GetMapping(value = "/{id_subcategory}")
+    public ResponseEntity<CategoryDto> getSubcategory(HttpServletRequest request,
+                                                                          @PathVariable(name = "id_subcategory")
+                                                                                  Long id_subcategory) {
+        Map<String, String> response = new HashMap<>();
+        String username = jwtTokenProvider.getUsername(jwtTokenProvider.resolveToken(request));
         Subcategory subcategory = subcategoryService.findById(id_subcategory);
         if (subcategory == null) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
-        if (!userService.checkingAccessRights(subcategory.getUser().getId(), headers))
-            return new ResponseEntity("Error: you have no rights", HttpStatus.FORBIDDEN);
+        if (!username.equals(subcategory.getUser().getUsername())) {
+            response.put("message", "У вас недостаточно прав");
+            return new ResponseEntity(response, HttpStatus.FORBIDDEN);
+        }
         SubcategoryDto result = SubcategoryDto.fromSubcategory(subcategory);
         return new ResponseEntity(result, HttpStatus.OK);
     }
-    @DeleteMapping(value = "delete/id_subcategory/{id_subcategory}")
-    public ResponseEntity deleteSubcategoryById(@RequestHeader Map<String,String> headers,
-                                                @PathVariable(name = "id_subcategory") Long id_subcategory)
-            throws UnsupportedEncodingException, JSONException {
+
+    @DeleteMapping(value = "/{id_subcategory}")
+    public ResponseEntity deleteSubcategory(HttpServletRequest request,
+                                                @PathVariable(name = "id_subcategory") Long id_subcategory) {
+        Map<String, String> response = new HashMap<>();
+        String username = jwtTokenProvider.getUsername(jwtTokenProvider.resolveToken(request));
         Subcategory subcategory = subcategoryService.findById(id_subcategory);
-        if(subcategory== null){
+        if (subcategory == null) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
-        Long id_user = subcategory.getUser().getId();
-        if (!userService.checkingAccessRights(id_user, headers))
-            return new ResponseEntity("Error: you have no rights", HttpStatus.FORBIDDEN);
+        if (!username.equals(subcategory.getUser().getUsername())) {
+            response.put("message", "У вас недостаточно прав");
+            return new ResponseEntity(response, HttpStatus.FORBIDDEN);
+        }
         subcategoryService.delete(id_subcategory);
-        return ResponseEntity.ok("Subcategory deleted successfully");
+        response.put("message", "Подкатегория успешно удалена!");
+        return ResponseEntity.ok(response);
     }
-    @PutMapping(value = "update/id_subcategory/{id_subcategory}")
-    public ResponseEntity updateSubcategoryById(@RequestHeader Map<String,String> headers,
-                                             @PathVariable(name = "id_subcategory") Long id_subcategory,
-                                             @RequestBody CreateUpdateSubcategoryDto createUpdateSubcategoryDto
-    ) throws UnsupportedEncodingException, JSONException {
-        Subcategory subcategory = subcategoryService.findById(id_subcategory);
-        if(subcategory== null){
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        }
-        Map<Object,Object> response = new HashMap<>();
-        if (!userService.checkingAccessRights(subcategory.getUser().getId(), headers))
-            return new ResponseEntity("Error: you have no rights", HttpStatus.FORBIDDEN);
-        Category category = categoryService.findById(createUpdateSubcategoryDto.getId_category());
-        if(category == null){
-            response.put("message","Error: there is no category for subcategory");
+
+    @PutMapping(value = "/{id_subcategory}")
+    public ResponseEntity updateSubcategory(HttpServletRequest request,
+                                                @PathVariable(name = "id_subcategory") Long id_subcategory,
+                                                @RequestBody CreateUpdateSubcategoryDto createUpdateSubcategoryDto) {
+        Map<String, String> response = new HashMap<>();
+        String username = jwtTokenProvider.getUsername(jwtTokenProvider.resolveToken(request));
+        String message = dataChecking(createUpdateSubcategoryDto);
+        if(message != null){
+            response.put("message", message);
             return ResponseEntity.badRequest().body(response);
         }
-        CreateUpdateSubcategoryDto result = CreateUpdateSubcategoryDto.fromSubcategory(subcategoryService.update(
-                createUpdateSubcategoryDto.toSubcategory(category),
-                id_subcategory,subcategory.getUser()));
+        Subcategory subcategory = subcategoryService.findById(id_subcategory);
+        if (subcategory == null) {
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+        if (!username.equals(subcategory.getUser().getUsername())) {
+            response.put("message", "У вас недостаточно прав");
+            return new ResponseEntity(response, HttpStatus.FORBIDDEN);
+        }
+        Category category = categoryService.findById(createUpdateSubcategoryDto.getIdCategory());
+        Subcategory updateSubcategory = subcategoryService.update(createUpdateSubcategoryDto.toSubcategory(category),
+                id_subcategory,
+                subcategory.getUser());
+        if (updateSubcategory == null) {
+            response.put("message", "Такая подкатегория уже существует");
+            return ResponseEntity.badRequest().body(response);
+        }
+        CreateUpdateSubcategoryDto result = CreateUpdateSubcategoryDto.fromSubcategory(updateSubcategory);
         return new ResponseEntity<>(result, HttpStatus.OK);
     }
 }

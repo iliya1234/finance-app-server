@@ -5,6 +5,7 @@ import lombok.Data;
 import net.proselyte.jwtappdemo.model.Operation;
 import net.proselyte.jwtappdemo.model.Subcategory;
 import net.proselyte.jwtappdemo.model.Type;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -16,10 +17,10 @@ public class OperationDto {
     private Date created;
     private String description;
     private Double total;
-    private Long subcategory_id;
+    private Long subcategoryId;
     private Type type;
 
-    public Operation toOperation(Subcategory subcategory){
+    public Operation toOperation(Subcategory subcategory) {
         Operation operation = new Operation();
         operation.setId(id);
         operation.setCreated(created);
@@ -29,19 +30,21 @@ public class OperationDto {
         operation.setType(type);
         return operation;
     }
-    public static OperationDto fromOperation(Operation operation){
+
+    public static OperationDto fromOperation(Operation operation) {
         OperationDto operationDto = new OperationDto();
         operationDto.setId(operation.getId());
         operationDto.setCreated(operation.getCreated());
         operationDto.setDescription(operation.getDescription());
         operationDto.setTotal(operation.getTotal());
-        operationDto.setSubcategory_id(operation.getSubcategory().getId());
+        operationDto.setSubcategoryId(operation.getSubcategory().getId());
         operationDto.setType(operation.getType());
         return operationDto;
     }
-    public static List<OperationDto> fromListOperation(List<Operation> operationList){
+
+    public static List<OperationDto> fromListOperation(List<Operation> operationList) {
         List<OperationDto> operationDtoList = new ArrayList<>();
-        for(Operation operation : operationList){
+        for (Operation operation : operationList) {
             OperationDto operationDto = OperationDto.fromOperation(operation);
             operationDtoList.add(operationDto);
         }

@@ -3,6 +3,7 @@ package net.proselyte.jwtappdemo.dto;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 import net.proselyte.jwtappdemo.model.*;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,7 +13,8 @@ public class CategoryDto {
     private Long id;
     private String name;
     private Type type;
-    public Category toCategory(){
+
+    public Category toCategory() {
         Category category = new Category();
         category.setId(id);
         category.setName(name);
@@ -27,9 +29,10 @@ public class CategoryDto {
         categoryDto.setType(category.getType());
         return categoryDto;
     }
-    public static List<CategoryDto> fromListCategory(List<Category> categoryList){
+
+    public static List<CategoryDto> fromListCategory(List<Category> categoryList) {
         List<CategoryDto> categoryDtoList = new ArrayList<>();
-        for(Category category : categoryList){
+        for (Category category : categoryList) {
             CategoryDto categoryDto = CategoryDto.fromCategory(category);
             categoryDtoList.add(categoryDto);
         }

@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class AdminUserDto {
@@ -42,9 +41,9 @@ public class AdminUserDto {
         return adminUserDto;
     }
 
-    public static List<AdminUserDto> fromListUser(List<User> userList){
+    public static List<AdminUserDto> fromListUser(List<User> userList) {
         List<AdminUserDto> adminUserDtoList = new ArrayList<>();
-        for(User user : userList){
+        for (User user : userList) {
             AdminUserDto adminUserDto = AdminUserDto.fromUser(user);
             adminUserDtoList.add(adminUserDto);
         }

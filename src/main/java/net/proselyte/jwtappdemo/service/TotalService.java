@@ -6,19 +6,19 @@ import java.util.List;
 
 public interface TotalService {
 
-    List<ObjectToTotalOperations> readPurchasesTotalToday(Long idUser);
+    List<ObjectToTotalOperations> readPurchasesTotalToday(String username);
 
-    List<ObjectToTotalOperations> readIncomesTotalToday(Long idUser);
+    List<ObjectToTotalOperations> readIncomesTotalToday(String username);
 
-    List<ObjectToTotalOperations> readPurchasesTotalWeek(Long idUser);
+    List<ObjectToTotalOperations> readPurchasesTotalWeek(String username);
 
-    List<ObjectToTotalOperations> readIncomesTotalWeek(Long idUser);
+    List<ObjectToTotalOperations> readIncomesTotalWeek(String username);
 
-    List<ObjectToTotalOperations> readPurchasesTotalMonth(Long idUser);
+    List<ObjectToTotalOperations> readPurchasesTotalMonth(String username);
 
-    List<ObjectToTotalOperations> readIncomesTotalMonth(Long idUser);
+    List<ObjectToTotalOperations> readIncomesTotalMonth(String username);
 
-    List<ObjectToTotalOperations> readPurchasesTotalYear(Long idUser);
+    List<ObjectToTotalOperations> readPurchasesTotalYear(String username);
 
-    List<ObjectToTotalOperations> readIncomesTotalYear(Long idUser);
+    List<ObjectToTotalOperations> readIncomesTotalYear(String username);
 }

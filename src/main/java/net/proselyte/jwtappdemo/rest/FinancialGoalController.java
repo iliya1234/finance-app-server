@@ -1,100 +1,143 @@
 package net.proselyte.jwtappdemo.rest;
 
+
+import com.google.common.base.Strings;
 import net.proselyte.jwtappdemo.dto.CreateUpdateFinancialGoalDto;
 import net.proselyte.jwtappdemo.dto.FinancialGoalDto;
 import net.proselyte.jwtappdemo.model.FinancialGoal;
+import net.proselyte.jwtappdemo.security.jwt.JwtTokenProvider;
 import net.proselyte.jwtappdemo.service.FinancialGoalService;
-import net.proselyte.jwtappdemo.service.UserService;
-import org.json.JSONException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.io.UnsupportedEncodingException;
+
+import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping(value = "/api/financial_goals/")
+@RequestMapping(value = "/api/financial_goals")
 public class FinancialGoalController {
     private final FinancialGoalService financialGoalService;
-    private final UserService userService;
+    private final JwtTokenProvider jwtTokenProvider;
 
-    public FinancialGoalController(FinancialGoalService financialGoalService, UserService userService) {
+    public FinancialGoalController(FinancialGoalService financialGoalService, JwtTokenProvider jwtTokenProvider) {
         this.financialGoalService = financialGoalService;
-        this.userService = userService;
+        this.jwtTokenProvider = jwtTokenProvider;
     }
 
-    @GetMapping(value = "all/user/{id}")
-    public ResponseEntity<List<FinancialGoalDto>> getAllFinancialGoalById(@RequestHeader Map<String,String> headers,
-                                                                          @PathVariable(name = "id") Long id)
-            throws UnsupportedEncodingException, JSONException {
-        if(!userService.checkingAccessRights(id, headers))
-            return new ResponseEntity("Error: you have no rights", HttpStatus.FORBIDDEN);
-        List<FinancialGoal> financialGoalList = financialGoalService.findByUserId(id);
+    private String dataChecking(CreateUpdateFinancialGoalDto result) {
+        String message;
+        if (Strings.isNullOrEmpty(result.getName())) {
+            message = "Название цели не может быть пустым";
+            return message;
+        }
+        if (result.getDateEnd() == null) {
+            message = "Дата окончания цели не может быть пустым";
+            return message;
+        }
+        if (result.getSumTotal() == null) {
+            message = "Итоговая сумма не должна быть пустой";
+            return message;
+        }
+        if (result.getSumUser() == null) {
+            message = "Сумма пользователя не может быть пустой";
+            return message;
+        }
+        return null;
+    }
+
+    @GetMapping
+    public ResponseEntity<List<FinancialGoalDto>> getAllFinancialGoalById(HttpServletRequest request) {
+        String username = jwtTokenProvider.getUsername(jwtTokenProvider.resolveToken(request));
+        List<FinancialGoal> financialGoalList = financialGoalService.findByUserUsername(username);
         if (financialGoalList == null) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
         List<FinancialGoalDto> result = FinancialGoalDto.fromListFinancialGoal(financialGoalList);
         return new ResponseEntity<>(result, HttpStatus.OK);
     }
-    @PostMapping(value = "create/user/{id_user}")
-    public ResponseEntity createFinancialGoal(@RequestBody CreateUpdateFinancialGoalDto createUpdateFinancialGoalDto,
-                                              @PathVariable(name = "id_user")
-            Long id_user, @RequestHeader Map<String,String> headers) throws UnsupportedEncodingException, JSONException {
-        if(!userService.checkingAccessRights(id_user, headers))
-            return new ResponseEntity("Error: you have no rights",HttpStatus.FORBIDDEN);
-        Map<Object,Object> response = new HashMap<>();
-        FinancialGoal financialGoal = financialGoalService.create(createUpdateFinancialGoalDto.toFinancialGoal(),id_user);
-        if(financialGoal == null){
-            response.put("message","Error: failed to create financial goal");
+
+    @PostMapping
+    public ResponseEntity createFinancialGoal(HttpServletRequest request,
+                                              @RequestBody CreateUpdateFinancialGoalDto createUpdateFinancialGoalDto) {
+        Map<String, String> response = new HashMap<>();
+        String username = jwtTokenProvider.getUsername(jwtTokenProvider.resolveToken(request));
+        String message = dataChecking(createUpdateFinancialGoalDto);
+        if (message != null) {
+            response.put("message", message);
             return ResponseEntity.badRequest().body(response);
         }
-        response.put("message", "Financial goal created successfully");
+        FinancialGoal financialGoal = financialGoalService
+                .create(createUpdateFinancialGoalDto.toFinancialGoal(), username);
+        if (financialGoal == null) {
+            response.put("message", "Цель не может быть достигнута в прошлом");
+            return ResponseEntity.badRequest().body(response);
+        }
+        response.put("message", "Финансовая цель успешно создана!");
         return ResponseEntity.ok(response);
     }
-    @GetMapping(value = "get/id_financial_goal/{id_financial_goal}")
-    public ResponseEntity<FinancialGoalDto> getFinancialGoalByIdUserAndIdFinancialGoal(@RequestHeader Map<String,String> headers,
-                                                                        @PathVariable(name = "id_financial_goal") Long id_financial_goal)
-            throws UnsupportedEncodingException, JSONException {
+
+    @GetMapping(value = "/{id_financial_goal}")
+    public ResponseEntity<FinancialGoalDto> getFinancialGoalByIdUserAndIdFinancialGoal(
+            HttpServletRequest request, @PathVariable(name = "id_financial_goal") Long id_financial_goal) {
+        Map<String, String> response = new HashMap<>();
+        String username = jwtTokenProvider.getUsername(jwtTokenProvider.resolveToken(request));
         FinancialGoal financialGoal = financialGoalService.findById(id_financial_goal);
         if (financialGoal == null) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
-        if (!userService.checkingAccessRights(financialGoal.getUser().getId(), headers))
-            return new ResponseEntity("Error: you have no rights", HttpStatus.FORBIDDEN);
+        if (!username.equals(financialGoal.getUser().getUsername())) {
+            response.put("message", "У вас недостаточно прав");
+            return new ResponseEntity(response, HttpStatus.FORBIDDEN);
+        }
         FinancialGoalDto result = FinancialGoalDto.fromFinancialGoal(financialGoal);
         return new ResponseEntity<>(result, HttpStatus.OK);
     }
-    @DeleteMapping(value = "delete/id_financial_goal/{id_financial_goal}")
-    public ResponseEntity deleteFinancialGoalById(@RequestHeader Map<String,String> headers,
-                                             @PathVariable(name = "id_financial_goal") Long id_financial_goal)
-            throws UnsupportedEncodingException, JSONException {
+
+    @DeleteMapping(value = "/{id_financial_goal}")
+    public ResponseEntity deleteFinancialGoalById(HttpServletRequest request,
+                                                  @PathVariable(name = "id_financial_goal") Long id_financial_goal) {
+        Map<String, String> response = new HashMap<>();
+        String username = jwtTokenProvider.getUsername(jwtTokenProvider.resolveToken(request));
         FinancialGoal financialGoal = financialGoalService.findById(id_financial_goal);
-        if(financialGoal== null){
+        if (financialGoal == null) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
-        Long id_user = financialGoal.getUser().getId();
-        if (!userService.checkingAccessRights(id_user, headers))
-            return new ResponseEntity("Error: you have no rights", HttpStatus.FORBIDDEN);
+        if (!username.equals(financialGoal.getUser().getUsername())) {
+            response.put("message", "У вас недостаточно прав");
+            return new ResponseEntity(response, HttpStatus.FORBIDDEN);
+        }
         financialGoalService.delete(id_financial_goal);
-        return ResponseEntity.ok("Financial goal deleted successfully");
+        response.put("message", "Финансовая цель успешно удалена");
+        return ResponseEntity.ok(response);
     }
-    @PutMapping(value = "update/id_financial_goal/{id_financial_goal}")
-    public ResponseEntity updateFinancialGoalById(@RequestHeader Map<String,String> headers,
-                                             @PathVariable(name = "id_financial_goal") Long id_financial_goal,
-                                             @RequestBody CreateUpdateFinancialGoalDto createUpdateFinancialGoalDto
-    ) throws UnsupportedEncodingException, JSONException {
+
+    @PutMapping(value = "/{id_financial_goal}")
+    public ResponseEntity updateFinancialGoalById
+            (HttpServletRequest request, @PathVariable(name = "id_financial_goal") Long id_financial_goal,
+             @RequestBody CreateUpdateFinancialGoalDto createUpdateFinancialGoalDto) {
+        Map<String, String> response = new HashMap<>();
+        String username = jwtTokenProvider.getUsername(jwtTokenProvider.resolveToken(request));
+        String message = dataChecking(createUpdateFinancialGoalDto);
+        if (message != null) {
+            response.put("message", message);
+            return ResponseEntity.badRequest().body(response);
+        }
         FinancialGoal financialGoal = financialGoalService.findById(id_financial_goal);
-        if(financialGoal== null){
+        if (financialGoal == null) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
-        if (!userService.checkingAccessRights(financialGoal.getUser().getId(), headers))
-            return new ResponseEntity("Error: you have no rights", HttpStatus.FORBIDDEN);
+        if (!username.equals(financialGoal.getUser().getUsername())) {
+            response.put("message", "У вас недостаточно прав");
+            return new ResponseEntity(response, HttpStatus.FORBIDDEN);
+        }
         FinancialGoal result = financialGoalService.update(createUpdateFinancialGoalDto.toFinancialGoal(),
-                financialGoal.getId(),financialGoal.getUser(),financialGoal.getDateStart());
-        if(result == null){
-            return ResponseEntity.badRequest().body("Error: failed to update financial goal");
+                financialGoal.getId(), financialGoal.getUser(), financialGoal.getDateStart());
+        if (result == null) {
+            response.put("message", "Цель не может быть достигнута в прошлом");
+            return ResponseEntity.badRequest().body(response);
         }
         return new ResponseEntity<>(FinancialGoalDto.fromFinancialGoal(result), HttpStatus.OK);
     }

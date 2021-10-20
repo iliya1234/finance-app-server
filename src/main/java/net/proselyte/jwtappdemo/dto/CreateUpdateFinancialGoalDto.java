@@ -3,6 +3,7 @@ package net.proselyte.jwtappdemo.dto;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 import net.proselyte.jwtappdemo.model.FinancialGoal;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -15,7 +16,7 @@ public class CreateUpdateFinancialGoalDto {
     private Double sumTotal;
     private Double sumUser;
 
-    public FinancialGoal toFinancialGoal(){
+    public FinancialGoal toFinancialGoal() {
         FinancialGoal financialGoal = new FinancialGoal();
         financialGoal.setName(name);
         financialGoal.setDateEnd(dateEnd);
@@ -24,7 +25,7 @@ public class CreateUpdateFinancialGoalDto {
         return financialGoal;
     }
 
-    public static CreateUpdateFinancialGoalDto fromFinancialGoal (FinancialGoal financialGoal) {
+    public static CreateUpdateFinancialGoalDto fromFinancialGoal(FinancialGoal financialGoal) {
         CreateUpdateFinancialGoalDto createUpdateFinancialGoalDto = new CreateUpdateFinancialGoalDto();
         createUpdateFinancialGoalDto.setName(financialGoal.getName());
         createUpdateFinancialGoalDto.setDateEnd(financialGoal.getDateEnd());
@@ -32,9 +33,10 @@ public class CreateUpdateFinancialGoalDto {
         createUpdateFinancialGoalDto.setSumUser(financialGoal.getSumUser());
         return createUpdateFinancialGoalDto;
     }
-    public static List<FinancialGoalDto> fromListFinancialGoal(List<FinancialGoal> financialGoalList){
+
+    public static List<FinancialGoalDto> fromListFinancialGoal(List<FinancialGoal> financialGoalList) {
         List<FinancialGoalDto> financialGoalDtoList = new ArrayList<>();
-        for(FinancialGoal financialGoal : financialGoalList){
+        for (FinancialGoal financialGoal : financialGoalList) {
             FinancialGoalDto financialGoalDto = FinancialGoalDto.fromFinancialGoal(financialGoal);
             financialGoalDtoList.add(financialGoalDto);
         }

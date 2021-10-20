@@ -1,7 +1,6 @@
 package net.proselyte.jwtappdemo.repository;
 
 import net.proselyte.jwtappdemo.dto.ObjectToTotalOperations;
-import net.proselyte.jwtappdemo.dto.TotalOperationsDto;
 import net.proselyte.jwtappdemo.model.TotalEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -9,7 +8,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
-public interface TotalRepository extends JpaRepository<TotalEntity,Long> {
+public interface TotalRepository extends JpaRepository<TotalEntity, Long> {
     @Query(
             value = "Select categories.name, sum(total) as \"total\"\n" +
                     "from operations\n" +

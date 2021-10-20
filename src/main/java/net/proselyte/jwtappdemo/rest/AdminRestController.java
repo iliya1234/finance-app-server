@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
 import java.util.List;
 
 
@@ -45,6 +46,7 @@ public class AdminRestController {
 
         return new ResponseEntity<>(result, HttpStatus.OK);
     }
+
     @GetMapping(value = "users/all")
     public ResponseEntity<List<UserRegisterDto>> getAllUsers() {
         List<User> listUsers = userService.getAll();
@@ -54,12 +56,13 @@ public class AdminRestController {
         List<UserRegisterDto> result = UserRegisterDto.fromListUser(listUsers);
         return new ResponseEntity<>(result, HttpStatus.OK);
     }
+
     @GetMapping(value = "users/category/{id}")
     public ResponseEntity<CategoryDto> getCategoryById(@PathVariable(name = "id") Long id) {
         Category category = categoryService.findById(id);
-        if(category == null)
+        if (category == null)
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        CategoryDto result =  CategoryDto.fromCategory(category);
+        CategoryDto result = CategoryDto.fromCategory(category);
         return new ResponseEntity<>(result, HttpStatus.OK);
     }
 

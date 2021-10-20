@@ -1,6 +1,5 @@
 package net.proselyte.jwtappdemo.service;
 
-import net.proselyte.jwtappdemo.dto.ObjectToTotalOperations;
 import net.proselyte.jwtappdemo.model.Operation;
 import net.proselyte.jwtappdemo.model.User;
 
@@ -13,10 +12,12 @@ public interface OperationService {
 
     List<Operation> findByUserId(Long id);
 
-    Operation create(Operation operation, Long idUser);
+    Operation create(Operation operation, String username);
 
     Operation update(Operation operation, Long id, User user);
 
     void delete(Long id);
+
+    List<Operation> findByUserUsername(String username);
 
 }

@@ -7,19 +7,16 @@ import net.proselyte.jwtappdemo.model.User;
 import net.proselyte.jwtappdemo.repository.RoleRepository;
 import net.proselyte.jwtappdemo.repository.UserRepository;
 import net.proselyte.jwtappdemo.service.UserService;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-import java.io.UnsupportedEncodingException;
+
 import java.util.*;
 
 
 @Service
 @Slf4j
 public class UserServiceImpl implements UserService {
-
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final BCryptPasswordEncoder passwordEncoder;
@@ -33,6 +30,26 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User register(User user) {
+        if (user.getUsername() == null) {
+            log.info("IN register - user has no username");
+            return null;
+        }
+        if (user.getEmail() == null) {
+            log.info("IN register - user has no email");
+            return null;
+        }
+        if (user.getFirstName() == null) {
+            log.info("IN register - user has no first name");
+            return null;
+        }
+        if (user.getLastName() == null) {
+            log.info("IN register - user has no last name");
+            return null;
+        }
+        if (user.getPassword() == null) {
+            log.info("IN register - user has no password");
+            return null;
+        }
         Role roleUser = roleRepository.findByName("ROLE_USER");
         List<Role> userRoles = new ArrayList<>();
         userRoles.add(roleUser);
@@ -73,7 +90,7 @@ public class UserServiceImpl implements UserService {
             return null;
         }
 
-        log.info("IN findById - user: {} found by id: {}", result);
+        log.info("IN findById - user: {} found by id: {}", result, id);
         return result;
     }
 
@@ -86,31 +103,13 @@ public class UserServiceImpl implements UserService {
             return null;
         }
 
-        log.info("IN findByEmail - user: {} found by email: {}", result);
+        log.info("IN findByEmail - user: {} found by email: {}", result, email);
         return result;
     }
 
     @Override
     public void delete(Long id) {
         userRepository.deleteById(id);
-        log.info("IN delete - user with id: {} successfully deleted");
-    }
-
-    @Override
-    public Boolean checkingAccessRights(Long id, Map<String,String> headers) throws UnsupportedEncodingException, JSONException {
-        String token = headers.get("authorization").split("\\.")[1];
-        if (token == null && !token.startsWith("Bearer_")) {
-            log.warn("IN checkingAccessRights - non-core token: {}", token);
-            return false;
-        }
-        String payLoad = new String(Base64.getDecoder().decode(token), "UTF-8");
-        JSONObject jsonObject = new JSONObject(payLoad);
-        User user = userRepository.findByUsername(jsonObject.getString("sub"));
-        if(user == null){
-            log.warn("IN checkingAccessRights - no user found by username: {}", jsonObject.getString("sub"));
-        }
-        if(user.getId()!=id)
-            return false;
-        return true;
+        log.info("IN delete - user with id: {} successfully deleted", id);
     }
 }

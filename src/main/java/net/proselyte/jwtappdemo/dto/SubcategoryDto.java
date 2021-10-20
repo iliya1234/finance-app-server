@@ -3,6 +3,7 @@ package net.proselyte.jwtappdemo.dto;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 import net.proselyte.jwtappdemo.model.*;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,10 +12,10 @@ import java.util.List;
 public class SubcategoryDto {
     private Long id;
     private String name;
-    private Long id_category;
+    private Long idCategory;
     private Type type;
 
-    public Subcategory toSubcategory(Category category){
+    public Subcategory toSubcategory(Category category) {
         Subcategory subcategory = new Subcategory();
         subcategory.setId(id);
         subcategory.setName(name);
@@ -27,13 +28,14 @@ public class SubcategoryDto {
         SubcategoryDto subcategoryDto = new SubcategoryDto();
         subcategoryDto.setId(subcategory.getId());
         subcategoryDto.setName(subcategory.getName());
-        subcategoryDto.setId_category(subcategory.getCategory().getId());
+        subcategoryDto.setIdCategory(subcategory.getCategory().getId());
         subcategoryDto.setType(subcategory.getType());
         return subcategoryDto;
     }
-    public static List<SubcategoryDto> fromListSubcategory(List<Subcategory> subcategoryList){
+
+    public static List<SubcategoryDto> fromListSubcategory(List<Subcategory> subcategoryList) {
         List<SubcategoryDto> subcategoryDtoList = new ArrayList<>();
-        for(Subcategory subcategory : subcategoryList){
+        for (Subcategory subcategory : subcategoryList) {
             SubcategoryDto subcategoryDto = SubcategoryDto.fromSubcategory(subcategory);
             subcategoryDtoList.add(subcategoryDto);
         }

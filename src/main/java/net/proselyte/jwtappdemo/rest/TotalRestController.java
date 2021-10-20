@@ -1,130 +1,88 @@
 package net.proselyte.jwtappdemo.rest;
 
 import net.proselyte.jwtappdemo.dto.ObjectToTotalOperations;
+import net.proselyte.jwtappdemo.security.jwt.JwtTokenProvider;
 import net.proselyte.jwtappdemo.service.TotalService;
-import net.proselyte.jwtappdemo.service.UserService;
-import org.json.JSONException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.UnsupportedEncodingException;
+import javax.servlet.http.HttpServletRequest;
 import java.util.List;
-import java.util.Map;
 
 
 @RestController
-@RequestMapping("/api/total/")
+@RequestMapping("/api/total")
 public class TotalRestController {
 
-    private final UserService userService;
-
     private final TotalService totalService;
+    private final JwtTokenProvider jwtTokenProvider;
 
-    public TotalRestController(UserService userService, TotalService totalService) {
-        this.userService = userService;
+    public TotalRestController(TotalService totalService, JwtTokenProvider jwtTokenProvider) {
         this.totalService = totalService;
+        this.jwtTokenProvider = jwtTokenProvider;
     }
 
-    @GetMapping(value = "today/purchases/user/{id}")
-    public ResponseEntity<List<ObjectToTotalOperations>> getTotalPurchasesTodayById(@RequestHeader Map<String,String> headers,
-                                                                                    @PathVariable(name = "id") Long id)
-            throws UnsupportedEncodingException, JSONException {
-        if(!userService.checkingAccessRights(id, headers))
-            return new ResponseEntity("Error: you have no rights", HttpStatus.FORBIDDEN);
-        List<ObjectToTotalOperations> list = totalService.readPurchasesTotalToday(id);
-        if (list.isEmpty()) {
+    private ResponseEntity chekForNullList(List<ObjectToTotalOperations> result) {
+        if (result == null) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
-        return new ResponseEntity<>(list, HttpStatus.OK);
+        return new ResponseEntity<>(result, HttpStatus.OK);
     }
 
-    @GetMapping(value = "today/incomes/user/{id}")
-    public ResponseEntity<List<ObjectToTotalOperations>> getTotalIncomesTodayById(@RequestHeader Map<String,String> headers,
-                                                                                  @PathVariable(name = "id") Long id)
-            throws UnsupportedEncodingException, JSONException {
-        if(!userService.checkingAccessRights(id, headers))
-            return new ResponseEntity("Error: you have no rights", HttpStatus.FORBIDDEN);
-        List<ObjectToTotalOperations> list = totalService.readIncomesTotalToday(id);
-        if (list.isEmpty()) {
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        }
-        return new ResponseEntity<>(list, HttpStatus.OK);
+    @GetMapping("/purchases/today")
+    public ResponseEntity getTotalPurchasesToday(HttpServletRequest request) {
+        String username = jwtTokenProvider.getUsername(jwtTokenProvider.resolveToken(request));
+        List<ObjectToTotalOperations> result = totalService.readPurchasesTotalToday(username);
+        return chekForNullList(result);
     }
 
-    @GetMapping(value = "week/purchases/user/{id}")
-    public ResponseEntity<List<ObjectToTotalOperations>> getTotalPurchasesWeekById(@RequestHeader Map<String,String> headers,
-                                                                                   @PathVariable(name = "id") Long id)
-            throws UnsupportedEncodingException, JSONException {
-        if(!userService.checkingAccessRights(id, headers))
-            return new ResponseEntity("Error: you have no rights", HttpStatus.FORBIDDEN);
-        List<ObjectToTotalOperations> list = totalService.readPurchasesTotalWeek(id);
-        if (list.isEmpty()) {
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        }
-        return new ResponseEntity<>(list, HttpStatus.OK);
+    @GetMapping(value = "/incomes/today")
+    public ResponseEntity getTotalIncomesToday(HttpServletRequest request) {
+        String username = jwtTokenProvider.getUsername(jwtTokenProvider.resolveToken(request));
+        List<ObjectToTotalOperations> result = totalService.readIncomesTotalToday(username);
+        return chekForNullList(result);
     }
 
-    @GetMapping(value = "week/incomes/user/{id}")
-    public ResponseEntity<List<ObjectToTotalOperations>> getTotalIncomesWeekById(@RequestHeader Map<String,String> headers,
-                                                                                 @PathVariable(name = "id") Long id)
-            throws UnsupportedEncodingException, JSONException {
-        if(!userService.checkingAccessRights(id, headers))
-            return new ResponseEntity("Error: you have no rights", HttpStatus.FORBIDDEN);
-        List<ObjectToTotalOperations> list = totalService.readIncomesTotalWeek(id);
-        if (list.isEmpty()) {
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        }
-        return new ResponseEntity<>(list, HttpStatus.OK);
-    }
-    @GetMapping(value = "month/purchases/user/{id}")
-    public ResponseEntity<List<ObjectToTotalOperations>> getTotalPurchasesMonthById(@RequestHeader Map<String,String> headers,
-                                                                                 @PathVariable(name = "id") Long id)
-            throws UnsupportedEncodingException, JSONException {
-        if(!userService.checkingAccessRights(id, headers))
-            return new ResponseEntity("Error: you have no rights", HttpStatus.FORBIDDEN);
-        List<ObjectToTotalOperations> list = totalService.readPurchasesTotalMonth(id);
-        if (list.isEmpty()) {
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        }
-        return new ResponseEntity<>(list, HttpStatus.OK);
-    }
-    @GetMapping(value = "month/incomes/user/{id}")
-    public ResponseEntity<List<ObjectToTotalOperations>> getTotalIncomesMonthById(@RequestHeader Map<String,String> headers,
-                                                                                    @PathVariable(name = "id") Long id)
-            throws UnsupportedEncodingException, JSONException {
-        if(!userService.checkingAccessRights(id, headers))
-            return new ResponseEntity("Error: you have no rights", HttpStatus.FORBIDDEN);
-        List<ObjectToTotalOperations> list = totalService.readIncomesTotalMonth(id);
-        if (list.isEmpty()) {
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        }
-        return new ResponseEntity<>(list, HttpStatus.OK);
+    @GetMapping(value = "/purchases/week")
+    public ResponseEntity getTotalPurchasesWeek(HttpServletRequest request) {
+        String username = jwtTokenProvider.getUsername(jwtTokenProvider.resolveToken(request));
+        List<ObjectToTotalOperations> result = totalService.readPurchasesTotalWeek(username);
+        return chekForNullList(result);
     }
 
-    @GetMapping(value = "year/purchases/user/{id}")
-    public ResponseEntity<List<ObjectToTotalOperations>> getTotalPurchasesYearById(@RequestHeader Map<String,String> headers,
-                                                                                  @PathVariable(name = "id") Long id)
-            throws UnsupportedEncodingException, JSONException {
-        if(!userService.checkingAccessRights(id, headers))
-            return new ResponseEntity("Error: you have no rights", HttpStatus.FORBIDDEN);
-        List<ObjectToTotalOperations> list = totalService.readPurchasesTotalYear(id);
-        if (list.isEmpty()) {
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        }
-        return new ResponseEntity<>(list, HttpStatus.OK);
+    @GetMapping(value = "/incomes/week")
+    public ResponseEntity getTotalIncomesWeek(HttpServletRequest request) {
+        String username = jwtTokenProvider.getUsername(jwtTokenProvider.resolveToken(request));
+        List<ObjectToTotalOperations> result = totalService.readIncomesTotalWeek(username);
+        return chekForNullList(result);
     }
 
-    @GetMapping(value = "year/incomes/user/{id}")
-    public ResponseEntity<List<ObjectToTotalOperations>> getTotalIncomesYearById(@RequestHeader Map<String,String> headers,
-                                                                                   @PathVariable(name = "id") Long id)
-            throws UnsupportedEncodingException, JSONException {
-        if(!userService.checkingAccessRights(id, headers))
-            return new ResponseEntity("Error: you have no rights", HttpStatus.FORBIDDEN);
-        List<ObjectToTotalOperations> list = totalService.readIncomesTotalYear(id);
-        if (list.isEmpty()) {
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        }
-        return new ResponseEntity<>(list, HttpStatus.OK);
+    @GetMapping(value = "/purchases/month")
+    public ResponseEntity getTotalPurchasesMonth(HttpServletRequest request) {
+        String username = jwtTokenProvider.getUsername(jwtTokenProvider.resolveToken(request));
+        List<ObjectToTotalOperations> result = totalService.readPurchasesTotalMonth(username);
+        return chekForNullList(result);
+    }
+
+    @GetMapping(value = "/incomes/month")
+    public ResponseEntity getTotalIncomesMonth(HttpServletRequest request) {
+        String username = jwtTokenProvider.getUsername(jwtTokenProvider.resolveToken(request));
+        List<ObjectToTotalOperations> result = totalService.readIncomesTotalMonth(username);
+        return chekForNullList(result);
+    }
+
+    @GetMapping(value = "/purchases/year")
+    public ResponseEntity getTotalPurchasesYear(HttpServletRequest request) {
+        String username = jwtTokenProvider.getUsername(jwtTokenProvider.resolveToken(request));
+        List<ObjectToTotalOperations> result = totalService.readPurchasesTotalYear(username);
+        return chekForNullList(result);
+    }
+
+    @GetMapping(value = "/incomes/year")
+    public ResponseEntity getTotalIncomesYear(HttpServletRequest request) {
+        String username = jwtTokenProvider.getUsername(jwtTokenProvider.resolveToken(request));
+        List<ObjectToTotalOperations> result = totalService.readIncomesTotalYear(username);
+        return chekForNullList(result);
     }
 }

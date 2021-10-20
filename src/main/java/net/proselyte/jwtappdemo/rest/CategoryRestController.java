@@ -1,96 +1,140 @@
 package net.proselyte.jwtappdemo.rest;
 
+import com.google.common.base.Strings;
 import net.proselyte.jwtappdemo.dto.CategoryDto;
 import net.proselyte.jwtappdemo.dto.CreateUpdateCategoryDto;
 import net.proselyte.jwtappdemo.model.Category;
+import net.proselyte.jwtappdemo.security.jwt.JwtTokenProvider;
 import net.proselyte.jwtappdemo.service.CategoryService;
-import net.proselyte.jwtappdemo.service.UserService;
-import org.json.JSONException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.io.UnsupportedEncodingException;
+
+import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping(value = "/api/categories/")
+@RequestMapping(value = "/api/categories")
 public class CategoryRestController {
     private final CategoryService categoryService;
-    private final UserService userService;
+    private final JwtTokenProvider jwtTokenProvider;
 
-    public CategoryRestController(CategoryService categoryService, UserService userService) {
+    public CategoryRestController(CategoryService categoryService, JwtTokenProvider jwtTokenProvider) {
         this.categoryService = categoryService;
-        this.userService = userService;
+        this.jwtTokenProvider = jwtTokenProvider;
     }
 
-    @GetMapping(value = "all/user/{id}")
-    public ResponseEntity<List<CategoryDto>> getAllCategoriesById(@RequestHeader Map<String,String> headers, @PathVariable(name = "id") Long id) throws UnsupportedEncodingException, JSONException {
-        if(!userService.checkingAccessRights(id, headers))
-            return new ResponseEntity("Error: you have no rights",HttpStatus.FORBIDDEN);
-        List<Category> categoryList = categoryService.findByUserId(id);
+    private String dataChecking(CreateUpdateCategoryDto createUpdateCategoryDto) {
+        String message;
+        if (Strings.isNullOrEmpty(createUpdateCategoryDto.getName())) {
+            message = "Название категории не может быть пустым";
+            return message;
+        }
+        if (createUpdateCategoryDto.getType() == null) {
+            message = "Тип категории не может быть пустым";
+            return message;
+        }
+        return null;
+    }
+
+    @GetMapping
+    public ResponseEntity getAllCategories(HttpServletRequest request) {
+        String username = jwtTokenProvider.getUsername(jwtTokenProvider.resolveToken(request));
+        List<Category> categoryList = categoryService.findByUserName(username);
         if (categoryList == null) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
         List<CategoryDto> result = CategoryDto.fromListCategory(categoryList);
-        return new ResponseEntity<>(result, HttpStatus.OK);
+        return new ResponseEntity(result, HttpStatus.OK);
     }
-    @PostMapping(value = "create/user/{id_user}")
-    public ResponseEntity createCategory(@RequestBody CreateUpdateCategoryDto createUpdateCategoryDto, @PathVariable(name = "id_user")
-            Long id_user, @RequestHeader Map<String,String> headers) throws UnsupportedEncodingException, JSONException {
-        if(!userService.checkingAccessRights(id_user, headers))
-            return new ResponseEntity("Error: you have no rights",HttpStatus.FORBIDDEN);
-        Map<Object,Object> response = new HashMap<>();
-        if(categoryService.findByName(createUpdateCategoryDto.getName(),id_user)!=null){
-            response.put("message","Error: category already created");
+
+    @PostMapping
+    public ResponseEntity createCategory(@RequestBody CreateUpdateCategoryDto createUpdateCategoryDto,
+                                         HttpServletRequest request) {
+        Map<String, String> response = new HashMap<>();
+        String username = jwtTokenProvider.getUsername(jwtTokenProvider.resolveToken(request));
+        String message = dataChecking(createUpdateCategoryDto);
+        if (message != null) {
+            response.put("message", message);
             return ResponseEntity.badRequest().body(response);
         }
-        Category category = categoryService.create(createUpdateCategoryDto.toCategory(),id_user);
-        if(category == null){
-            response.put("message","Error: failed to create category");
+        if (categoryService.findByNameAndUsername(createUpdateCategoryDto.getName(), username) != null) {
+            response.put("message", "Категория уже создана");
             return ResponseEntity.badRequest().body(response);
         }
-        response.put("message", "Category created successfully");
+        Category category = categoryService.create(createUpdateCategoryDto.toCategory(), username);
+        if (category == null) {
+            response.put("message", "Ошибка при создании категории");
+            return ResponseEntity.badRequest().body(response);
+        }
+        response.put("message", "Категория успешно создана!");
         return ResponseEntity.ok(response);
     }
-    @GetMapping(value = "get/id_category/{id_category}")
-    public ResponseEntity<CategoryDto> getCategoryByIdUserAndIdCategory(@RequestHeader Map<String,String> headers,
-                                                                        @PathVariable(name = "id_category") Long id_category) throws UnsupportedEncodingException, JSONException {
+
+    @GetMapping(value = "/{id_category}")
+    public ResponseEntity getCategory(HttpServletRequest request,
+                                      @PathVariable(name = "id_category") Long id_category) {
+        Map<String, String> response = new HashMap<>();
+        String username = jwtTokenProvider.getUsername(jwtTokenProvider.resolveToken(request));
         Category category = categoryService.findById(id_category);
         if (category == null) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
-        if (!userService.checkingAccessRights(category.getUser().getId(), headers))
-            return new ResponseEntity("Error: you have no rights", HttpStatus.FORBIDDEN);
+        if (!username.equals(category.getUser().getUsername())) {
+            response.put("message", "У вас недостаточно прав");
+            return new ResponseEntity(response, HttpStatus.FORBIDDEN);
+        }
         CategoryDto result = CategoryDto.fromCategory(category);
         return new ResponseEntity<>(result, HttpStatus.OK);
     }
-    @DeleteMapping(value = "delete/id_category/{id_category}")
-    public ResponseEntity deleteCategoryById(@RequestHeader Map<String,String> headers,
-                                             @PathVariable(name = "id_category") Long id_category) throws UnsupportedEncodingException, JSONException {
+
+    @DeleteMapping(value = "/{id_category}")
+    public ResponseEntity deleteCategory(HttpServletRequest request,
+                                         @PathVariable(name = "id_category") Long id_category) {
+        Map<String, String> response = new HashMap<>();
+        String username = jwtTokenProvider.getUsername(jwtTokenProvider.resolveToken(request));
         Category category = categoryService.findById(id_category);
-        if(category== null){
+        if (category == null) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
-        Long id_user = category.getUser().getId();
-        if (!userService.checkingAccessRights(id_user, headers))
-            return new ResponseEntity("Error: you have no rights", HttpStatus.FORBIDDEN);
+        if (!username.equals(category.getUser().getUsername())) {
+            response.put("message", "У вас недостаточно прав");
+            return new ResponseEntity(response, HttpStatus.FORBIDDEN);
+        }
         categoryService.delete(id_category);
-        return ResponseEntity.ok("Category deleted successfully");
+        response.put("message", "Категория успешно удалена!");
+        return ResponseEntity.ok(response);
     }
-    @PutMapping(value = "update/id_category/{id_category}")
-    public ResponseEntity updateCategoryById(@RequestHeader Map<String,String> headers,
-                                             @PathVariable(name = "id_category") Long id_category,
-                                             @RequestBody CreateUpdateCategoryDto createUpdateCategoryDto
-    ) throws UnsupportedEncodingException, JSONException {
+
+    @PutMapping(value = "/{id_category}")
+    public ResponseEntity updateCategory(HttpServletRequest request,
+                                         @PathVariable(name = "id_category") Long id_category,
+                                         @RequestBody CreateUpdateCategoryDto createUpdateCategoryDto
+    ) {
+        Map<String, String> response = new HashMap<>();
+        String username = jwtTokenProvider.getUsername(jwtTokenProvider.resolveToken(request));
         Category category = categoryService.findById(id_category);
-        if(category== null){
+        if (category == null) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
-        if (!userService.checkingAccessRights(category.getUser().getId(), headers))
-            return new ResponseEntity("Error: you have no rights", HttpStatus.FORBIDDEN);
-        CreateUpdateCategoryDto result = CreateUpdateCategoryDto.fromCategory(categoryService.update(createUpdateCategoryDto.toCategory(),id_category,category.getUser()));
+        if (!username.equals(category.getUser().getUsername())) {
+            response.put("message", "У вас недостаточно прав");
+            return new ResponseEntity(response, HttpStatus.FORBIDDEN);
+        }
+        String message = dataChecking(createUpdateCategoryDto);
+        if (message != null) {
+            response.put("message", message);
+            return ResponseEntity.badRequest().body(response);
+        }
+        Category updateCategory = categoryService.update(
+                createUpdateCategoryDto.toCategory(), id_category, category.getUser());
+        if (updateCategory == null) {
+            response.put("message", "Такая категория уже соществует");
+            return ResponseEntity.badRequest().body(response);
+        }
+        CreateUpdateCategoryDto result = CreateUpdateCategoryDto.fromCategory(updateCategory);
         return new ResponseEntity<>(result, HttpStatus.OK);
     }
 }

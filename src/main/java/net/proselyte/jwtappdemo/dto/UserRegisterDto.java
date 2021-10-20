@@ -3,6 +3,7 @@ package net.proselyte.jwtappdemo.dto;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 import net.proselyte.jwtappdemo.model.User;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,7 +16,8 @@ public class UserRegisterDto {
     private String lastName;
     private String email;
     private String password;
-    public User toUser(){
+
+    public User toUser() {
         User user = new User();
         user.setId(id);
         user.setUsername(username);
@@ -36,9 +38,10 @@ public class UserRegisterDto {
         userDto.setPassword(user.getPassword());
         return userDto;
     }
-    public static List<UserRegisterDto> fromListUser(List<User> userList){
+
+    public static List<UserRegisterDto> fromListUser(List<User> userList) {
         List<UserRegisterDto> userRegisterDtoList = new ArrayList<>();
-        for(User user : userList){
+        for (User user : userList) {
             UserRegisterDto userRegisterDto = UserRegisterDto.fromUser(user);
             userRegisterDtoList.add(userRegisterDto);
         }

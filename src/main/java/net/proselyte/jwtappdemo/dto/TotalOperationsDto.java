@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 @JsonIgnoreProperties
-public class TotalOperationsDto implements ObjectToTotalOperations{
+public class TotalOperationsDto implements ObjectToTotalOperations {
     private String name;
     private Double total;
 }

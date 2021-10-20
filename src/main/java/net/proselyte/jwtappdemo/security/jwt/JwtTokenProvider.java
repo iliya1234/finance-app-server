@@ -6,7 +6,6 @@ import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import net.proselyte.jwtappdemo.model.Role;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -23,12 +22,6 @@ import java.util.Base64;
 import java.util.Date;
 import java.util.List;
 
-/**
- * Util class that provides methods for generation, validation, etc. of JWT token.
- *
- * @author Eugene Suleimanov
- * @version 1.0
- */
 
 @Component
 public class JwtTokenProvider {
@@ -40,8 +33,11 @@ public class JwtTokenProvider {
     private long validityInMilliseconds;
 
 
-    @Autowired
-    private UserDetailsService userDetailsService;
+    private final UserDetailsService userDetailsService;
+
+    public JwtTokenProvider(UserDetailsService userDetailsService) {
+        this.userDetailsService = userDetailsService;
+    }
 
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {

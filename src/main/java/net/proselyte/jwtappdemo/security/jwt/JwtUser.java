@@ -1,19 +1,12 @@
 package net.proselyte.jwtappdemo.security.jwt;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import net.proselyte.jwtappdemo.model.User;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 import java.util.Date;
 
-/**
- * Spring Security wrapper for class {@link User}.
- *
- * @author Eugene Suleimanov
- * @version 1.0
- */
 
 public class JwtUser implements UserDetails {
 

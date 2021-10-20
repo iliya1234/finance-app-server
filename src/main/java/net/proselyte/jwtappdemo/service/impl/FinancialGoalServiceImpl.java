@@ -8,14 +8,15 @@ import net.proselyte.jwtappdemo.repository.UserRepository;
 import net.proselyte.jwtappdemo.service.FinancialGoalService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
 import java.util.Date;
 import java.util.List;
 
 @Service
 @Slf4j
 public class FinancialGoalServiceImpl implements FinancialGoalService {
-    private FinancialGoalRepository financialGoalRepository;
-    private UserRepository userRepository;
+    private final FinancialGoalRepository financialGoalRepository;
+    private final UserRepository userRepository;
 
     @Autowired
     public FinancialGoalServiceImpl(FinancialGoalRepository financialGoalRepository, UserRepository userRepository) {
@@ -33,11 +34,11 @@ public class FinancialGoalServiceImpl implements FinancialGoalService {
     @Override
     public FinancialGoal findById(Long id) {
         FinancialGoal result = financialGoalRepository.findById(id).orElse(null);
-        if (result == null){
+        if (result == null) {
             log.warn("IN findById - no financial goal found by id: {}", id);
             return null;
         }
-        log.info("IN findById - financial goal: {} found by id: {}", result);
+        log.info("IN findById - financial goal: {} found by id: {}", result, id);
         return result;
 
     }
@@ -45,21 +46,21 @@ public class FinancialGoalServiceImpl implements FinancialGoalService {
     @Override
     public List<FinancialGoal> findByUserId(Long id) {
         List<FinancialGoal> result = financialGoalRepository.findByUserId(id);
-        log.info("IN getByUserId - {} financial goal found with id: {}", result.size(),id);
+        log.info("IN getByUserId - {} financial goal found with id: {}", result.size(), id);
         return result;
     }
 
     @Override
-    public FinancialGoal create(FinancialGoal financialGoal,Long idUser) {
+    public FinancialGoal create(FinancialGoal financialGoal, String username) {
         Date dateStart = new Date();
-        if(dateStart.compareTo(financialGoal.getDateEnd())==1){
+        if (dateStart.compareTo(financialGoal.getDateEnd()) > 0) {
             log.info("In create - the goal cannot be achieved in the past");
             return null;
         }
         financialGoal.setDateStart(dateStart);
-        User user = userRepository.findById(idUser).orElse(null);
-        if(user == null){
-            log.warn("IN findById - no user found by id: {}", idUser);
+        User user = userRepository.findByUsername(username);
+        if (user == null) {
+            log.warn("IN findById - no user found by username: {}", username);
             return null;
         }
         financialGoal.setUser(user);
@@ -69,9 +70,9 @@ public class FinancialGoalServiceImpl implements FinancialGoalService {
     }
 
     @Override
-    public FinancialGoal update(FinancialGoal financialGoal, Long id, User user,Date dateStart) {
+    public FinancialGoal update(FinancialGoal financialGoal, Long id, User user, Date dateStart) {
         Date dateNow = new Date();
-        if(dateNow.compareTo(financialGoal.getDateEnd())==1){
+        if (dateNow.compareTo(financialGoal.getDateEnd()) > 0) {
             log.info("In create - the goal cannot be achieved in the past");
             return null;
         }
@@ -86,5 +87,15 @@ public class FinancialGoalServiceImpl implements FinancialGoalService {
     @Override
     public void delete(Long id) {
         financialGoalRepository.deleteById(id);
+    }
+
+    @Override
+    public List<FinancialGoal> findByUserUsername(String username) {
+        List<FinancialGoal> result = financialGoalRepository.findByUserUsername(username);
+        log.info("IN findByUserUsername - {} financial goal found", result.size());
+        if (result.isEmpty()) {
+            return null;
+        }
+        return result;
     }
 }
