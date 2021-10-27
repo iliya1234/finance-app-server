@@ -3,6 +3,7 @@ package net.proselyte.jwtappdemo.rest;
 import net.proselyte.jwtappdemo.dto.*;
 import net.proselyte.jwtappdemo.model.Operation;
 import net.proselyte.jwtappdemo.model.Subcategory;
+import net.proselyte.jwtappdemo.model.Type;
 import net.proselyte.jwtappdemo.security.jwt.JwtTokenProvider;
 import net.proselyte.jwtappdemo.service.OperationService;
 import net.proselyte.jwtappdemo.service.SubcategoryService;
@@ -61,6 +62,28 @@ public class OperationRestController {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
         List<OperationDto> result = OperationDto.fromListOperation(operationList);
+        return new ResponseEntity<>(result, HttpStatus.OK);
+    }
+
+    @GetMapping(value = "/purchases")
+    public ResponseEntity<List<OperationDto>> getAllPurchases(HttpServletRequest request) {
+        String username = jwtTokenProvider.getUsername(jwtTokenProvider.resolveToken(request));
+        List<Operation> purchasesList = operationService.getAllPurchaseOrIncomes(Type.Purchases, username);
+        if (purchasesList == null) {
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+        List<OperationDto> result = OperationDto.fromListOperation(purchasesList);
+        return new ResponseEntity<>(result, HttpStatus.OK);
+    }
+
+    @GetMapping(value = "/incomes")
+    public ResponseEntity<List<OperationDto>> getAllIncomes(HttpServletRequest request) {
+        String username = jwtTokenProvider.getUsername(jwtTokenProvider.resolveToken(request));
+        List<Operation> incomesList = operationService.getAllPurchaseOrIncomes(Type.Incomes, username);
+        if (incomesList == null) {
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+        List<OperationDto> result = OperationDto.fromListOperation(incomesList);
         return new ResponseEntity<>(result, HttpStatus.OK);
     }
 

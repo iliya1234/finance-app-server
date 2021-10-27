@@ -2,6 +2,7 @@ package net.proselyte.jwtappdemo.service.impl;
 
 import lombok.extern.slf4j.Slf4j;
 import net.proselyte.jwtappdemo.model.Operation;
+import net.proselyte.jwtappdemo.model.Type;
 import net.proselyte.jwtappdemo.model.User;
 import net.proselyte.jwtappdemo.repository.OperationRepository;
 import net.proselyte.jwtappdemo.repository.UserRepository;
@@ -28,6 +29,13 @@ public class OperationServiceImpl implements OperationService {
     public List<Operation> getAll() {
         List<Operation> result = operationRepository.findAll();
         log.info("IN getAll - {} operations found", result.size());
+        return result;
+    }
+
+    @Override
+    public List<Operation> getAllPurchaseOrIncomes(Type type, String username) {
+        List<Operation> result = operationRepository.findByTypeAndUserUsername(type, username);
+        log.info("IN getAllPurchase - {} operations found", result.size());
         return result;
     }
 

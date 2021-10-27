@@ -1,12 +1,15 @@
 package net.proselyte.jwtappdemo.service;
 
 import net.proselyte.jwtappdemo.model.Operation;
+import net.proselyte.jwtappdemo.model.Type;
 import net.proselyte.jwtappdemo.model.User;
 
 import java.util.List;
 
 public interface OperationService {
     List<Operation> getAll();
+
+    List<Operation> getAllPurchaseOrIncomes(Type type, String username);
 
     Operation findById(Long id);
 
