@@ -36,6 +36,10 @@ public class OperationServiceImpl implements OperationService {
     public List<Operation> getAllPurchaseOrIncomes(Type type, String username) {
         List<Operation> result = operationRepository.findByTypeAndUserUsername(type, username);
         log.info("IN getAllPurchase - {} operations found", result.size());
+        if (result.size() == 0) {
+            log.info("IN getAllPurchase - no operations found by username: {}", username);
+            return null;
+        }
         return result;
     }
 
